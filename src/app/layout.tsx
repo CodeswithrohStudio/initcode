@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full dark`}>
-      <body className="h-full overflow-hidden bg-[#0f0f0f] text-[#e8e8e8] antialiased">
+    <html lang="en" className={`${inter.variable} dark`}>
+      <body className="bg-black text-[#e8e8e8] antialiased">
         <TooltipProvider>
           {children}
         </TooltipProvider>

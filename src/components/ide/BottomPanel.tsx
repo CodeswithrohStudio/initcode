@@ -57,7 +57,7 @@ function DeploymentItem({ deployment }: { deployment: Deployment }) {
   const statusIcon = {
     pending: <Clock className="w-3.5 h-3.5 text-[#6b7280]" />,
     compiling: <Loader2 className="w-3.5 h-3.5 text-blue-400 animate-spin" />,
-    storing: <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin" />,
+    storing: <Loader2 className="w-3.5 h-3.5 text-[#a8a8a8] animate-spin" />,
     instantiating: <Loader2 className="w-3.5 h-3.5 text-yellow-400 animate-spin" />,
     success: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />,
     failed: <XCircle className="w-3.5 h-3.5 text-red-400" />,
@@ -66,7 +66,7 @@ function DeploymentItem({ deployment }: { deployment: Deployment }) {
   const statusColor = {
     pending: "text-[#6b7280]",
     compiling: "text-blue-400",
-    storing: "text-violet-400",
+    storing: "text-[#a8a8a8]",
     instantiating: "text-yellow-400",
     success: "text-emerald-400",
     failed: "text-red-400",
@@ -87,7 +87,7 @@ function DeploymentItem({ deployment }: { deployment: Deployment }) {
         {deployment.contractAddress && (
           <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[10px] text-[#6b7280]">Address:</span>
-            <span className="text-[10px] font-mono text-violet-300 truncate">
+            <span className="text-[10px] font-mono text-[#c0c0c0] truncate">
               {deployment.contractAddress}
             </span>
           </div>
@@ -102,7 +102,7 @@ function DeploymentItem({ deployment }: { deployment: Deployment }) {
               href={`https://scan.testnet.initia.xyz/tx/${deployment.txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-violet-400 hover:text-violet-300"
+              className="text-[#a8a8a8] hover:text-white"
             >
               <ExternalLink className="w-3 h-3" />
             </a>

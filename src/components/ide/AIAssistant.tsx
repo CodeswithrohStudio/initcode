@@ -80,7 +80,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
       )}
     >
       {!isUser && (
-        <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center shrink-0 mt-0.5">
+        <div className="w-6 h-6 rounded-full bg-[#333333] flex items-center justify-center shrink-0 mt-0.5">
           <Bot className="w-3.5 h-3.5 text-white" />
         </div>
       )}
@@ -95,7 +95,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
         {isUser ? (
           <p className="whitespace-pre-wrap">{msg.content}</p>
         ) : (
-          <div className="prose prose-invert prose-xs max-w-none [&_pre]:bg-[#0f0f0f] [&_pre]:rounded [&_pre]:p-2 [&_pre]:text-[11px] [&_code]:text-violet-300 [&_code]:text-[11px]">
+          <div className="prose prose-invert prose-xs max-w-none [&_pre]:bg-[#0f0f0f] [&_pre]:rounded [&_pre]:p-2 [&_pre]:text-[11px] [&_code]:text-[#e0e0e0] [&_code]:text-[11px]">
             <ReactMarkdown>{msg.content}</ReactMarkdown>
           </div>
         )}
@@ -225,11 +225,11 @@ export function AIAssistant() {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a2a] shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded bg-violet-600 flex items-center justify-center">
+          <div className="w-5 h-5 rounded bg-[#333333] flex items-center justify-center">
             <Bot className="w-3 h-3 text-white" />
           </div>
           <span className="text-xs font-semibold text-white">AI Assistant</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-900/40 text-violet-300">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2a2a2a] text-[#a8a8a8]">
             Claude
           </span>
         </div>
@@ -259,8 +259,8 @@ export function AIAssistant() {
       <ScrollArea className="flex-1 min-h-0">
         {chatMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[200px] px-4 py-8 gap-4">
-            <div className="w-10 h-10 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-violet-400" />
+            <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div className="text-center">
               <p className="text-xs font-medium text-white">InitCode AI</p>
@@ -272,10 +272,10 @@ export function AIAssistant() {
               {QUICK_ACTIONS.map((action) => (
                 <button
                   key={action.label}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] hover:border-violet-500/50 hover:bg-[#1e1e1e] transition-all text-left"
+                  className="flex items-center gap-2 px-3 py-2 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] hover:border-white/30 hover:bg-[#1e1e1e] transition-all text-left"
                   onClick={() => sendMessage(action.prompt)}
                 >
-                  <span className="text-violet-400">{action.icon}</span>
+                  <span className="text-[#a8a8a8]">{action.icon}</span>
                   <span className="text-xs text-[#a8a8a8]">{action.label}</span>
                 </button>
               ))}
@@ -288,11 +288,11 @@ export function AIAssistant() {
             ))}
             {isChatLoading && chatMessages[chatMessages.length - 1]?.role === "user" && (
               <div className="flex gap-2 px-3 py-2">
-                <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-full bg-[#333333] flex items-center justify-center shrink-0">
                   <Bot className="w-3.5 h-3.5 text-white" />
                 </div>
                 <div className="chat-message-ai px-3 py-2 flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin text-violet-400" />
+                  <Loader2 className="w-3 h-3 animate-spin text-[#a8a8a8]" />
                   <span className="text-xs text-[#6b7280]">Thinking...</span>
                 </div>
               </div>
@@ -311,12 +311,12 @@ export function AIAssistant() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about CosmWasm, Initia, or your contract..."
-            className="min-h-[60px] max-h-[120px] text-xs bg-[#1e1e1e] border-[#2a2a2a] text-white placeholder:text-[#4b5563] resize-none focus-visible:ring-violet-500 focus-visible:ring-1"
+            className="min-h-[60px] max-h-[120px] text-xs bg-[#1e1e1e] border-[#2a2a2a] text-white placeholder:text-[#4b5563] resize-none focus-visible:ring-white focus-visible:ring-1"
             disabled={isChatLoading}
           />
           <Button
             size="icon"
-            className="h-9 w-9 shrink-0 bg-violet-600 hover:bg-violet-500"
+            className="h-9 w-9 shrink-0 bg-white hover:bg-[#e0e0e0] text-black"
             onClick={() => sendMessage(input)}
             disabled={isChatLoading || !input.trim()}
           >

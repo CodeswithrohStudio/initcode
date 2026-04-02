@@ -41,54 +41,54 @@
 }
 
 :root {
-  --background: #0f0f0f;
+  --background: #0a0a0a;
   --foreground: #e8e8e8;
-  --card: #1a1a1a;
+  --card: #111111;
   --card-foreground: #e8e8e8;
-  --popover: #1a1a1a;
+  --popover: #111111;
   --popover-foreground: #e8e8e8;
-  --primary: #7c3aed;
-  --primary-foreground: #ffffff;
-  --secondary: #1e1e1e;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #1a1a1a;
   --secondary-foreground: #a8a8a8;
-  --muted: #1e1e1e;
+  --muted: #1a1a1a;
   --muted-foreground: #6b7280;
-  --accent: #2d1f5e;
-  --accent-foreground: #c4b5fd;
+  --accent: #222222;
+  --accent-foreground: #e0e0e0;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #2a2a2a;
-  --input: #1e1e1e;
-  --ring: #7c3aed;
+  --border: #222222;
+  --input: #1a1a1a;
+  --ring: #ffffff;
   --radius: 0.5rem;
-  --sidebar: #141414;
+  --sidebar: #0f0f0f;
   --sidebar-foreground: #e8e8e8;
-  --sidebar-primary: #7c3aed;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1e1e1e;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #1a1a1a;
   --sidebar-accent-foreground: #a8a8a8;
-  --sidebar-border: #2a2a2a;
-  --sidebar-ring: #7c3aed;
+  --sidebar-border: #222222;
+  --sidebar-ring: #ffffff;
 }
 
 .dark {
-  --background: #0f0f0f;
+  --background: #0a0a0a;
   --foreground: #e8e8e8;
-  --card: #1a1a1a;
+  --card: #111111;
   --card-foreground: #e8e8e8;
-  --popover: #1a1a1a;
+  --popover: #111111;
   --popover-foreground: #e8e8e8;
-  --primary: #7c3aed;
-  --primary-foreground: #ffffff;
-  --secondary: #1e1e1e;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #1a1a1a;
   --secondary-foreground: #a8a8a8;
-  --muted: #1e1e1e;
+  --muted: #1a1a1a;
   --muted-foreground: #6b7280;
-  --accent: #2d1f5e;
-  --accent-foreground: #c4b5fd;
+  --accent: #222222;
+  --accent-foreground: #e0e0e0;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: #2a2a2a;
-  --input: #1e1e1e;
-  --ring: #7c3aed;
+  --border: #222222;
+  --input: #1a1a1a;
+  --ring: #ffffff;
 }
 
 @layer base {
@@ -110,43 +110,43 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: #111111;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3a3a3a;
+  background: #333333;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5a5a5a;
+  background: #555555;
 }
 
 /* IDE-specific styles */
 .ide-panel {
-  background: #141414;
-  border-color: #2a2a2a;
+  background: #0f0f0f;
+  border-color: #222222;
 }
 
 .monaco-editor-container {
-  background: #0f0f0f;
+  background: #0a0a0a;
 }
 
 /* Pulse animation for deploy button */
-@keyframes pulse-violet {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
+@keyframes pulse-white {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
 }
 
 .deploy-btn-pulse {
-  animation: pulse-violet 2s infinite;
+  animation: pulse-white 2s infinite;
 }
 
 /* Chat message styling */
 .chat-message-user {
-  background: #2d1f5e;
+  background: #222222;
   border-radius: 12px 12px 4px 12px;
 }
 .chat-message-ai {
-  background: #1e1e1e;
+  background: #1a1a1a;
   border-radius: 12px 12px 12px 4px;
 }
 

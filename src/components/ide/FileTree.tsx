@@ -74,9 +74,9 @@ function FileTreeNode({ node, depth = 0, onContextMenu }: FileTreeNodeProps) {
             )}
           </span>
           {expanded ? (
-            <FolderOpen className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+            <FolderOpen className="w-3.5 h-3.5 text-[#a8a8a8] shrink-0" />
           ) : (
-            <Folder className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+            <Folder className="w-3.5 h-3.5 text-[#a8a8a8] shrink-0" />
           )}
           <span className="text-xs text-[#c8c8c8] truncate">{node.name}</span>
         </div>
@@ -244,7 +244,7 @@ export function FileTree() {
                 if (e.key === "Escape") setCreating(null);
               }}
               placeholder={creating.type === "file" ? "filename.rs" : "folder-name"}
-              className="h-6 text-xs bg-[#1e1e1e] border-violet-500 text-white px-2"
+              className="h-6 text-xs bg-[#1e1e1e] border-white/40 text-white px-2"
               autoFocus
             />
           </div>
@@ -300,23 +300,23 @@ export function FileTree() {
           <div className="grid gap-2 mt-2 max-h-[420px] overflow-y-auto pr-1">
             {TEMPLATES.map((tpl) => {
               const diffColor = {
-                beginner: "text-emerald-400 bg-emerald-900/30 border-emerald-700/40",
-                intermediate: "text-yellow-400 bg-yellow-900/30 border-yellow-700/40",
-                advanced: "text-red-400 bg-red-900/30 border-red-700/40",
+                beginner: "text-[#a8a8a8] bg-white/5 border-white/15",
+                intermediate: "text-[#c0c0c0] bg-white/8 border-white/20",
+                advanced: "text-white bg-white/10 border-white/30",
               }[tpl.difficulty];
 
               const catColor = {
-                starter: "text-blue-300 bg-blue-900/30",
-                token: "text-violet-300 bg-violet-900/30",
-                nft: "text-pink-300 bg-pink-900/30",
-                defi: "text-orange-300 bg-orange-900/30",
-                governance: "text-teal-300 bg-teal-900/30",
+                starter: "text-[#a8a8a8] bg-white/5",
+                token: "text-[#c0c0c0] bg-white/8",
+                nft: "text-[#d0d0d0] bg-white/10",
+                defi: "text-[#b8b8b8] bg-white/6",
+                governance: "text-[#c8c8c8] bg-white/7",
               }[tpl.category];
 
               return (
                 <button
                   key={tpl.id}
-                  className="flex items-start gap-3 p-3 rounded-md border border-[#2a2a2a] bg-[#141414] hover:border-violet-500/50 hover:bg-[#1e1e1e] transition-all text-left"
+                  className="flex items-start gap-3 p-3 rounded-md border border-[#2a2a2a] bg-[#141414] hover:border-white/30 hover:bg-[#1e1e1e] transition-all text-left"
                   onClick={() => handleLoadTemplate(tpl)}
                 >
                   <div className="flex-1 min-w-0">

@@ -24,10 +24,10 @@ function EditorSkeleton() {
 function WelcomeScreen() {
   return (
     <div className="flex-1 bg-[#0f0f0f] flex flex-col items-center justify-center gap-4">
-      <div className="w-16 h-16 rounded-2xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center">
+      <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M16 4L28 10V22L16 28L4 22V10L16 4Z" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
-          <path d="M16 4V28M4 10L28 22M28 10L4 22" stroke="#7c3aed" strokeWidth="0.75" opacity="0.4" />
+          <path d="M16 4L28 10V22L16 28L4 22V10L16 4Z" stroke="#ffffff" strokeWidth="1.5" fill="none" />
+          <path d="M16 4V28M4 10L28 22M28 10L4 22" stroke="#ffffff" strokeWidth="0.75" opacity="0.4" />
         </svg>
       </div>
       <div className="text-center">
@@ -62,14 +62,14 @@ function TabBar() {
             "flex items-center gap-1.5 px-3 py-2 cursor-pointer border-r border-[#2a2a2a] shrink-0 group",
             "text-xs transition-colors",
             activeFileId === tab.fileId
-              ? "bg-[#0f0f0f] text-white border-t-2 border-t-violet-500 -mt-px"
+              ? "bg-[#0f0f0f] text-white border-t-2 border-t-white -mt-px"
               : "text-[#6b7280] hover:text-[#a8a8a8] hover:bg-[#1a1a1a]"
           )}
           onClick={() => setActiveFile(tab.fileId)}
         >
           <span className="truncate max-w-[120px]">{tab.name}</span>
           {tab.isDirty && (
-            <Circle className="w-1.5 h-1.5 fill-violet-400 text-violet-400 shrink-0" />
+            <Circle className="w-1.5 h-1.5 fill-white text-white shrink-0" />
           )}
           <button
             className={cn(

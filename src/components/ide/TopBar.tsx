@@ -79,8 +79,8 @@ export function TopBar({ onDeploy }: TopBarProps) {
     <header className="flex items-center h-12 px-3 border-b border-[#2a2a2a] bg-[#0f0f0f] shrink-0 gap-2 z-50">
       {/* Logo */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center justify-center w-7 h-7 rounded-md bg-violet-600">
-          <Code2 className="w-4 h-4 text-white" />
+        <div className="flex items-center justify-center w-7 h-7 rounded-md bg-white">
+          <Code2 className="w-4 h-4 text-black" />
         </div>
         <span className="font-semibold text-sm text-white">InitCode</span>
       </div>
@@ -118,7 +118,7 @@ export function TopBar({ onDeploy }: TopBarProps) {
               if (e.key === "Enter") handleNameSave();
               if (e.key === "Escape") setEditingName(false);
             }}
-            className="h-6 text-xs bg-[#1e1e1e] border-violet-500 text-white w-48 px-2"
+            className="h-6 text-xs bg-[#1e1e1e] border-white/40 text-white w-48 px-2"
             autoFocus
           />
         ) : (
@@ -140,8 +140,8 @@ export function TopBar({ onDeploy }: TopBarProps) {
         {/* .init username badge */}
         {initUsername && (
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#1e1e1e] border border-[#2a2a2a]">
-            <Zap className="w-3 h-3 text-violet-400" />
-            <span className="text-xs text-violet-300 font-mono">{initUsername}</span>
+            <Zap className="w-3 h-3 text-[#a8a8a8]" />
+            <span className="text-xs text-[#c8c8c8] font-mono">{initUsername}</span>
           </div>
         )}
 
@@ -175,7 +175,7 @@ export function TopBar({ onDeploy }: TopBarProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a2a] bg-[#1a1a1a]">
                   <div className="flex items-center gap-2">
-                    <Wallet className="w-3.5 h-3.5 text-violet-400" />
+                    <Wallet className="w-3.5 h-3.5 text-[#a8a8a8]" />
                     <span className="text-xs font-semibold text-white">Dev Accounts</span>
                   </div>
                   <span className="text-[10px] text-[#6b7280]">Initia Testnet · Pre-funded</span>
@@ -193,7 +193,7 @@ export function TopBar({ onDeploy }: TopBarProps) {
                       {copied ? "Copied!" : "Copy"}
                     </button>
                   </div>
-                  <p className="text-[11px] font-mono text-violet-300 break-all">{walletAddress}</p>
+                  <p className="text-[11px] font-mono text-[#c8c8c8] break-all">{walletAddress}</p>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-baseline gap-1">
                       <span className="text-lg font-bold text-emerald-400">
@@ -204,7 +204,7 @@ export function TopBar({ onDeploy }: TopBarProps) {
                     <button
                       onClick={handleFaucet}
                       disabled={faucetLoading}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-violet-900/40 border border-violet-700/50 text-violet-300 text-[11px] hover:bg-violet-900/60 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#2a2a2a] border border-[#3a3a3a] text-[#c8c8c8] text-[11px] hover:bg-[#3a3a3a] transition-colors disabled:opacity-50"
                     >
                       {faucetLoading ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -268,7 +268,7 @@ export function TopBar({ onDeploy }: TopBarProps) {
         <Button
           size="sm"
           className={cn(
-            "h-7 text-xs gap-1.5 bg-violet-600 hover:bg-violet-500 text-white border-0 font-semibold",
+            "h-7 text-xs gap-1.5 bg-white hover:bg-[#e0e0e0] text-black border-0 font-semibold",
             !isDeploying && "deploy-btn-pulse"
           )}
           onClick={onDeploy}
