@@ -6,11 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Rocket,
   Wallet,
   PanelLeftClose,
@@ -56,7 +51,6 @@ export function TopBar({ onDeploy }: TopBarProps) {
       return;
     }
     setWalletConnecting(true);
-    // Simulate wallet connection
     await new Promise((r) => setTimeout(r, 1500));
     const mockAddress = "init1" + Math.random().toString(36).slice(2, 12);
     const mockUsername = "builder" + Math.floor(Math.random() * 999);
@@ -82,45 +76,33 @@ export function TopBar({ onDeploy }: TopBarProps) {
 
       {/* Panel toggles */}
       <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-[#6b7280] hover:text-white hover:bg-[#1e1e1e]"
-              onClick={() => setLeftPanelOpen(!leftPanelOpen)}
-            >
-              {leftPanelOpen ? (
-                <PanelLeftClose className="w-3.5 h-3.5" />
-              ) : (
-                <PanelLeftOpen className="w-3.5 h-3.5" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {leftPanelOpen ? "Hide" : "Show"} file explorer
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-[#6b7280] hover:text-white hover:bg-[#1e1e1e]"
+          onClick={() => setLeftPanelOpen(!leftPanelOpen)}
+          title={leftPanelOpen ? "Hide file explorer" : "Show file explorer"}
+        >
+          {leftPanelOpen ? (
+            <PanelLeftClose className="w-3.5 h-3.5" />
+          ) : (
+            <PanelLeftOpen className="w-3.5 h-3.5" />
+          )}
+        </Button>
 
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-[#6b7280] hover:text-white hover:bg-[#1e1e1e]"
-              onClick={() => setRightPanelOpen(!rightPanelOpen)}
-            >
-              {rightPanelOpen ? (
-                <PanelRightClose className="w-3.5 h-3.5" />
-              ) : (
-                <PanelRightOpen className="w-3.5 h-3.5" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {rightPanelOpen ? "Hide" : "Show"} AI assistant
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-[#6b7280] hover:text-white hover:bg-[#1e1e1e]"
+          onClick={() => setRightPanelOpen(!rightPanelOpen)}
+          title={rightPanelOpen ? "Hide AI assistant" : "Show AI assistant"}
+        >
+          {rightPanelOpen ? (
+            <PanelRightClose className="w-3.5 h-3.5" />
+          ) : (
+            <PanelRightOpen className="w-3.5 h-3.5" />
+          )}
+        </Button>
       </div>
 
       <div className="w-px h-5 bg-[#2a2a2a] mx-1" />

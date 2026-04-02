@@ -5,13 +5,7 @@ import { useIDEStore } from "@/store/ideStore";
 import { TEMPLATES } from "@/lib/templates";
 import type { FileNode } from "@/types";
 import type { Template } from "@/lib/templates";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +18,6 @@ import {
   File,
   Folder,
   FolderOpen,
-  Plus,
   FilePlus,
   FolderPlus,
   Trash2,
@@ -204,45 +197,27 @@ export function FileTree() {
           Explorer
         </span>
         <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 text-[#6b7280] hover:text-white hover:bg-[#2a2a2a]"
-                onClick={() => handleCreate("file")}
-              >
-                <FilePlus className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">New File</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 text-[#6b7280] hover:text-white hover:bg-[#2a2a2a]"
-                onClick={() => handleCreate("folder")}
-              >
-                <FolderPlus className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">New Folder</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 text-[#6b7280] hover:text-white hover:bg-[#2a2a2a]"
-                onClick={() => setShowTemplates(true)}
-              >
-                <LayoutTemplate className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Templates</TooltipContent>
-          </Tooltip>
+          <button
+            title="New File"
+            className="h-5 w-5 flex items-center justify-center text-[#6b7280] hover:text-white hover:bg-[#2a2a2a] rounded"
+            onClick={() => handleCreate("file")}
+          >
+            <FilePlus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            title="New Folder"
+            className="h-5 w-5 flex items-center justify-center text-[#6b7280] hover:text-white hover:bg-[#2a2a2a] rounded"
+            onClick={() => handleCreate("folder")}
+          >
+            <FolderPlus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            title="Templates"
+            className="h-5 w-5 flex items-center justify-center text-[#6b7280] hover:text-white hover:bg-[#2a2a2a] rounded"
+            onClick={() => setShowTemplates(true)}
+          >
+            <LayoutTemplate className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
