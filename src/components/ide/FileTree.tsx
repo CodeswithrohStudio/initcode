@@ -292,26 +292,51 @@ export function FileTree() {
 
       {/* Template Dialog */}
       <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
-        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] text-white max-w-md">
+        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] text-white max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-white">Contract Templates</DialogTitle>
+            <p className="text-xs text-[#6b7280] mt-0.5">Select a template to load it into the editor</p>
           </DialogHeader>
-          <div className="grid gap-2 mt-2">
-            {TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.id}
-                className="flex flex-col items-start gap-1 p-3 rounded-md border border-[#2a2a2a] bg-[#141414] hover:border-violet-500/50 hover:bg-[#1e1e1e] transition-all text-left"
-                onClick={() => handleLoadTemplate(tpl)}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-white">{tpl.name}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-900/40 text-violet-300 capitalize">
-                    {tpl.category}
+          <div className="grid gap-2 mt-2 max-h-[420px] overflow-y-auto pr-1">
+            {TEMPLATES.map((tpl) => {
+              const diffColor = {
+                beginner: "text-emerald-400 bg-emerald-900/30 border-emerald-700/40",
+                intermediate: "text-yellow-400 bg-yellow-900/30 border-yellow-700/40",
+                advanced: "text-red-400 bg-red-900/30 border-red-700/40",
+              }[tpl.difficulty];
+
+              const catColor = {
+                starter: "text-blue-300 bg-blue-900/30",
+                token: "text-violet-300 bg-violet-900/30",
+                nft: "text-pink-300 bg-pink-900/30",
+                defi: "text-orange-300 bg-orange-900/30",
+                governance: "text-teal-300 bg-teal-900/30",
+              }[tpl.category];
+
+              return (
+                <button
+                  key={tpl.id}
+                  className="flex items-start gap-3 p-3 rounded-md border border-[#2a2a2a] bg-[#141414] hover:border-violet-500/50 hover:bg-[#1e1e1e] transition-all text-left"
+                  onClick={() => handleLoadTemplate(tpl)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-white">{tpl.name}</span>
+                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded capitalize", catColor)}>
+                        {tpl.category}
+                      </span>
+                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded border capitalize", diffColor)}>
+                        {tpl.difficulty}
+                      </span>
+                    </div>
+                    <span className="text-xs text-[#6b7280] mt-0.5 block">{tpl.description}</span>
+                  </div>
+                  <span className="text-[10px] text-[#4b5563] shrink-0 mt-0.5">
+                    {tpl.files.length} file{tpl.files.length > 1 ? "s" : ""}
                   </span>
-                </div>
-                <span className="text-xs text-[#6b7280]">{tpl.description}</span>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>

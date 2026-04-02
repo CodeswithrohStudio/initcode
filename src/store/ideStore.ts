@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { FileNode, Tab, ChatMessage, Deployment, LogEntry, BottomTab } from "@/types";
-import { DEFAULT_FILES } from "@/lib/templates";
+import { DEFAULT_FILES, DEFAULT_ACTIVE_FILE_ID } from "@/lib/templates";
+import { DEV_ACCOUNTS, getInitUsername, type DevAccount } from "@/lib/devWallets";
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
@@ -17,6 +18,9 @@ interface IDEStore {
   walletAddress: string | null;
   initUsername: string | null;
   isWalletConnecting: boolean;
+  walletBalance: number; // in INIT
+  selectedAccountIndex: number;
+  devAccounts: DevAccount[];
 
   // Deployment
   deployments: Deployment[];
@@ -47,6 +51,8 @@ interface IDEStore {
   setWallet: (address: string, username: string) => void;
   disconnectWallet: () => void;
   setWalletConnecting: (v: boolean) => void;
+  selectAccount: (index: number) => void;
+  requestFaucet: () => void;
 
   // Actions — Deploy
   addDeployment: (d: Deployment) => void;
@@ -111,14 +117,16 @@ export const useIDEStore = create<IDEStore>()(
   persist(
     (set, get) => ({
       files: DEFAULT_FILES,
-      activeFileId: DEFAULT_FILES[0]?.id ?? null,
-      openTabs: DEFAULT_FILES[0]
-        ? [{ fileId: DEFAULT_FILES[0].id, name: DEFAULT_FILES[0].name, isDirty: false }]
-        : [],
+      activeFileId: DEFAULT_ACTIVE_FILE_ID,
+      openTabs: [{ fileId: DEFAULT_ACTIVE_FILE_ID, name: "contract.rs", isDirty: false }],
 
-      walletAddress: null,
-      initUsername: null,
+      // Auto-connect dev account #0 like Remix
+      walletAddress: DEV_ACCOUNTS[0].address,
+      initUsername: getInitUsername(DEV_ACCOUNTS[0].address),
       isWalletConnecting: false,
+      walletBalance: DEV_ACCOUNTS[0].balance,
+      selectedAccountIndex: 0,
+      devAccounts: DEV_ACCOUNTS,
 
       deployments: [],
       isDeploying: false,
@@ -239,6 +247,26 @@ export const useIDEStore = create<IDEStore>()(
 
       setWalletConnecting: (v) => set({ isWalletConnecting: v }),
 
+      selectAccount: (index) => {
+        const account = DEV_ACCOUNTS[index];
+        if (!account) return;
+        set({
+          selectedAccountIndex: index,
+          walletAddress: account.address,
+          initUsername: getInitUsername(account.address),
+          walletBalance: account.balance,
+        });
+      },
+
+      requestFaucet: () => {
+        set((state) => ({
+          walletBalance: state.walletBalance + 100,
+          devAccounts: state.devAccounts.map((a, i) =>
+            i === state.selectedAccountIndex ? { ...a, balance: a.balance + 100 } : a
+          ),
+        }));
+      },
+
       addDeployment: (d) =>
         set((state) => ({ deployments: [d, ...state.deployments] })),
 
@@ -259,7 +287,13 @@ export const useIDEStore = create<IDEStore>()(
 
       clearLogs: () => set({ deployLogs: [] }),
 
-      setDeploying: (v) => set({ isDeploying: v }),
+      setDeploying: (v) => {
+        set({ isDeploying: v });
+        // Deduct ~0.5 INIT gas on deploy start
+        if (v) {
+          set((s) => ({ walletBalance: Math.max(0, s.walletBalance - 0.5) }));
+        }
+      },
 
       addChatMessage: (msg) =>
         set((state) => ({

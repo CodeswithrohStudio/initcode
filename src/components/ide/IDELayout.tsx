@@ -30,14 +30,7 @@ export function IDELayout() {
   const activeFile = useActiveFile();
 
   const handleDeploy = useCallback(async () => {
-    if (!walletAddress) {
-      // Auto-prompt wallet connection
-      addLog({ type: "warning", message: "Please connect your wallet to deploy." });
-      setBottomTab("terminal");
-      setBottomPanelOpen(true);
-      return;
-    }
-
+    // walletAddress is always set (dev account auto-connected)
     const contractName = activeFile?.name?.replace(".rs", "") ?? "my-contract";
     const deployId = generateId();
 
