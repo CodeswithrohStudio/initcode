@@ -144,10 +144,15 @@
 .chat-message-user {
   background: #222222;
   border-radius: 12px 12px 4px 12px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .chat-message-ai {
   background: #1a1a1a;
   border-radius: 12px 12px 12px 4px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden;
 }
 
 /* Log line colors */

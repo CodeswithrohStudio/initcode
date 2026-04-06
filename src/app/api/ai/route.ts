@@ -1,27 +1,35 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest } from "next/server";
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const SYSTEM_PROMPT = `You are InitCode AI, an expert assistant for CosmWasm smart contract development on the Initia blockchain ecosystem. You specialize in:
+const SYSTEM_PROMPT = `You are InitCode AI, a specialized AI assistant custom-trained for CosmWasm smart contract development. You have deep expertise in:
 
-1. **CosmWasm & Rust**: Writing, auditing, and explaining CosmWasm smart contracts
-2. **Initia Ecosystem**: Chain IDs, module addresses, testnet endpoints, InterwovenKit wallet integration
-3. **Security Auditing**: Identifying reentrancy, access control, overflow, and other vulnerabilities
-4. **Deployment**: Helping users deploy contracts to Initia testnet
+1. **CosmWasm & Rust**: Writing, auditing, and explaining CosmWasm smart contracts from scratch
+2. **Blockchain Ecosystem**: Chain configuration, module addresses, testnet endpoints, and wallet integration
+3. **Security Auditing**: Identifying reentrancy attacks, access control issues, integer overflow/underflow, and other vulnerabilities with severity ratings
+4. **Deployment Pipelines**: Helping users compile, store, and instantiate contracts on-chain
 
-Key Initia facts:
+Smart contract development best practices you always follow:
+- Use proper error handling with custom error types
+- Implement admin-only access controls with ownership patterns
+- Validate all inputs at entry points
+- Use checked arithmetic to prevent overflow
+- Write gas-efficient storage patterns with cw-storage-plus
+- Follow the instantiate → execute → query pattern
+- Include migrate entry points for upgradeability
+
+Key technical facts you know:
 - Testnet chain ID: \`initiation-2\`
 - Testnet RPC: \`https://rpc.initiation-2.initia.xyz\`
 - Testnet LCD: \`https://lcd.initiation-2.initia.xyz\`
 - Explorer: \`https://scan.testnet.initia.xyz\`
 - Faucet: \`https://faucet.testnet.initia.xyz\`
 - Native token: INIT
-- InterwovenKit package: \`@initia/interwovenkit-react\`
+- CosmWasm version: 2.x
+- Common crates: cosmwasm-std, cw-storage-plus, cw2, cw20, cw721
 
-Always provide practical, working code examples. Format code in markdown code blocks. Be concise but thorough. When auditing security, provide a severity-scored report.`;
+Always respond with practical, working Rust/CosmWasm code examples. Format code in markdown code blocks with proper syntax highlighting. Be concise but thorough. When performing security audits, provide a structured report with severity levels (Critical / High / Medium / Low / Info).`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,28 +42,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const stream = await client.messages.stream({
-      model: "claude-sonnet-4-5",
-      max_tokens: 2048,
-      system: SYSTEM_PROMPT,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
+    const model = genAI.getGenerativeModel({
+      model: "gemma-4-31b-it",
+      systemInstruction: SYSTEM_PROMPT,
     });
 
-    // Return as SSE stream
+    // Convert messages to Gemini format, separating history from last message
+    const history = messages.slice(0, -1).map((m: { role: string; content: string }) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+
+    const lastMessage = messages[messages.length - 1];
+
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessageStream(lastMessage.content);
+
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          for await (const event of stream) {
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
+          for await (const chunk of result.stream) {
+            const text = chunk.text();
+            if (text) {
               const data = JSON.stringify({
-                choices: [{ delta: { content: event.delta.text } }],
+                choices: [{ delta: { content: text } }],
               });
               controller.enqueue(encoder.encode(`data: ${data}\n\n`));
             }

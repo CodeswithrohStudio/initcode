@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
+import type { OnMount } from "@monaco-editor/react";
 import { useIDEStore, useActiveFile } from "@/store/ideStore";
 import { Button } from "@/components/ui/button";
 import { X, Circle } from "lucide-react";
@@ -93,25 +94,95 @@ export function EditorPanel() {
   const { updateFileContent, openTabs, activeFileId } = useIDEStore();
   const activeFile = useActiveFile();
   const editorRef = useRef<unknown>(null);
+  const completionsDisposable = useRef<{ dispose(): void } | null>(null);
 
-  const handleEditorDidMount = useCallback((editor: unknown) => {
+  const handleEditorDidMount = useCallback<OnMount>((editor, monaco) => {
     editorRef.current = editor;
-    // @ts-expect-error Monaco editor type
-    editor.addCommand(2097152 | 49, () => {
-      // Cmd+S — mark as saved (clear dirty)
-      if (activeFileId) {
-        useIDEStore.getState().openTabs.forEach((t) => {
-          if (t.fileId === activeFileId) {
-            useIDEStore.setState((s) => ({
-              openTabs: s.openTabs.map((tab) =>
-                tab.fileId === activeFileId ? { ...tab, isDirty: false } : tab
-              ),
-            }));
-          }
-        });
+
+    // Cmd+S — mark as saved (clear dirty)
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      const { activeFileId: id } = useIDEStore.getState();
+      if (id) {
+        useIDEStore.setState((s) => ({
+          openTabs: s.openTabs.map((tab) =>
+            tab.fileId === id ? { ...tab, isDirty: false } : tab
+          ),
+        }));
       }
     });
-  }, [activeFileId]);
+
+    // Dispose any previous inline completions provider before re-registering
+    completionsDisposable.current?.dispose();
+
+    // Register AI inline completions (ghost text, accept with Tab)
+    completionsDisposable.current = monaco.languages.registerInlineCompletionsProvider(
+      [{ pattern: "**" }],
+      {
+        provideInlineCompletions: async (model, position, _ctx, token) => {
+          const prefix = model.getValueInRange({
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+          });
+
+          // Only trigger when there's something meaningful to complete
+          const currentLine = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+          if (!currentLine.trim()) return { items: [] };
+
+          const suffix = model.getValueInRange({
+            startLineNumber: position.lineNumber,
+            startColumn: position.column,
+            endLineNumber: model.getLineCount(),
+            endColumn: model.getLineMaxColumn(model.getLineCount()),
+          });
+
+          const abortCtrl = new AbortController();
+          const cancelSub = token.onCancellationRequested(() => abortCtrl.abort());
+
+          try {
+            const res = await fetch("/api/complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                prefix: prefix.slice(-3000),
+                suffix: suffix.slice(0, 500),
+                language: model.getLanguageId(),
+              }),
+              signal: abortCtrl.signal,
+            });
+
+            if (!res.ok || token.isCancellationRequested) return { items: [] };
+
+            const { completion } = await res.json() as { completion: string };
+            if (!completion) return { items: [] };
+
+            return {
+              items: [{
+                insertText: completion,
+                range: {
+                  startLineNumber: position.lineNumber,
+                  startColumn: position.column,
+                  endLineNumber: position.lineNumber,
+                  endColumn: position.column,
+                },
+              }],
+            };
+          } catch {
+            return { items: [] };
+          } finally {
+            cancelSub.dispose();
+          }
+        },
+        freeInlineCompletions: () => {},
+      }
+    );
+
+    editor.onDidDispose(() => {
+      completionsDisposable.current?.dispose();
+      completionsDisposable.current = null;
+    });
+  }, []);
 
   return (
     <div className="flex flex-col flex-1 min-w-0 min-h-0 bg-[#0f0f0f]">
@@ -152,6 +223,7 @@ export function EditorPanel() {
               automaticLayout: true,
               suggest: { showWords: true },
               quickSuggestions: true,
+              inlineSuggest: { enabled: true },
               scrollbar: {
                 verticalScrollbarSize: 6,
                 horizontalScrollbarSize: 6,

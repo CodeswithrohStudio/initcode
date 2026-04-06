@@ -86,16 +86,26 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
       )}
       <div
         className={cn(
-          "max-w-[85%] px-3 py-2 text-xs leading-relaxed",
+          "min-w-0 overflow-hidden px-3 py-2 text-xs leading-relaxed",
           isUser
-            ? "chat-message-user text-white"
-            : "chat-message-ai text-[#c8c8c8]"
+            ? "max-w-[85%] chat-message-user text-white"
+            : "w-full chat-message-ai text-[#c8c8c8]"
         )}
       >
         {isUser ? (
-          <p className="whitespace-pre-wrap">{msg.content}</p>
+          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
         ) : (
-          <div className="prose prose-invert prose-xs max-w-none [&_pre]:bg-[#0f0f0f] [&_pre]:rounded [&_pre]:p-2 [&_pre]:text-[11px] [&_code]:text-[#e0e0e0] [&_code]:text-[11px]">
+          <div className="prose prose-invert prose-xs max-w-none break-words
+            [&_pre]:bg-[#0f0f0f] [&_pre]:rounded [&_pre]:p-2.5 [&_pre]:text-[11px] [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:my-2
+            [&_code]:text-[#e0e0e0] [&_code]:text-[11px] [&_code]:break-words
+            [&_p]:mb-2 [&_p]:leading-relaxed [&_p]:break-words
+            [&_ul]:pl-4 [&_ul]:mb-2 [&_ol]:pl-4 [&_ol]:mb-2
+            [&_li]:mb-0.5 [&_li]:break-words
+            [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:mb-1 [&_h1]:mt-2
+            [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:mb-1 [&_h2]:mt-2
+            [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:mb-1 [&_h3]:mt-2
+            [&_strong]:text-white [&_strong]:font-semibold
+            [&_blockquote]:border-l-2 [&_blockquote]:border-[#3a3a3a] [&_blockquote]:pl-2 [&_blockquote]:text-[#a8a8a8]">
             <ReactMarkdown>{msg.content}</ReactMarkdown>
           </div>
         )}
@@ -230,7 +240,7 @@ export function AIAssistant() {
           </div>
           <span className="text-xs font-semibold text-white">AI Assistant</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2a2a2a] text-[#a8a8a8]">
-            Claude
+            custom
           </span>
         </div>
         <div className="flex items-center gap-1">
