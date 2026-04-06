@@ -11,57 +11,77 @@ import {
 } from "@initia/initia.js";
 import { gzipSync } from "zlib";
 
-// Initia L1 testnet does NOT support CosmWasm (it uses MoveVM).
-// CosmWasm runs on WasmVM L2 rollups — set these env vars to target one:
-//   WASM_REST_URL  — e.g. https://lcd.stonewasm-17.initia.xyz or http://localhost:1317
-//   WASM_CHAIN_ID  — e.g. stonewasm-17 or your-local-chain-id
-// If unset, falls back to mock mode.
+// WasmVM L2 rollup on Initia testnet — CosmWasm contracts live here.
+// Set env vars to enable real deployment:
+//   DEPLOYER_MNEMONIC — BIP-39 mnemonic of the deployer wallet
+//   WASM_REST_URL     — REST/LCD endpoint, e.g. https://rest-wasm-1.anvil.asia-southeast.initia.xyz
+//   WASM_CHAIN_ID     — chain-id, e.g. wasm-1
+//   WASM_GAS_DENOM    — gas token denom (l2/... or uinit)
 const REST_URL = process.env.WASM_REST_URL ?? "";
-const CHAIN_ID = process.env.WASM_CHAIN_ID ?? "";
+const CHAIN_ID  = process.env.WASM_CHAIN_ID  ?? "";
+const GAS_DENOM = process.env.WASM_GAS_DENOM ??
+  "l2/8b3e1fc559b327a35335e3f26ff657eaee5ff8486ccd3c1bc59007a93cf23156";
 
-// Cache fetched WASM in module scope across requests
+// Cache fetched WASM binary across warm invocations
 let cachedWasm: Buffer | null = null;
 
 async function fetchWasm(): Promise<Buffer> {
   if (cachedWasm) return cachedWasm;
-  // hackatom v1.5.7 — tested cosmwasm ABI compatible with initiation-2
-  const res = await fetch(
-    "https://github.com/CosmWasm/cosmwasm/releases/download/v1.5.7/hackatom.wasm",
-    { headers: { Accept: "application/octet-stream" } }
-  );
-  if (!res.ok) throw new Error(`Failed to fetch WASM binary: ${res.status} ${res.statusText}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  cachedWasm = buf;
-  return buf;
+  const url =
+    "https://github.com/CosmWasm/cosmwasm/releases/download/v1.5.7/hackatom.wasm";
+  const res = await fetch(url, { headers: { Accept: "application/octet-stream" } });
+  if (!res.ok)
+    throw new Error(`Failed to fetch WASM binary: ${res.status} ${res.statusText}`);
+  cachedWasm = Buffer.from(await res.arrayBuffer());
+  return cachedWasm;
 }
 
-function getInitMsg(contractName: string, senderAddress: string): object {
-  const n = contractName.toLowerCase();
-  // hackatom requires verifier + beneficiary addresses
-  // Map template names to reasonable init messages for display purposes
-  if (n.includes("cw20") || n.includes("token")) {
-    // cw20-base init — won't match hackatom ABI but we document this
-    return { verifier: senderAddress, beneficiary: senderAddress };
-  }
-  return { verifier: senderAddress, beneficiary: senderAddress };
-}
-
-async function queryTxAttr(txHash: string, eventType: string, attrKey: string): Promise<string | null> {
-  try {
-    const url = `${REST_URL}/cosmos/tx/v1beta1/txs/${txHash}`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = await res.json() as any;
-    const events: any[] = data?.tx_response?.events ?? [];
-    for (const event of events) {
-      if (event.type === eventType) {
-        const attr = (event.attributes ?? []).find((a: any) => a.key === attrKey);
-        if (attr) return attr.value;
+// Poll the REST API for tx inclusion — uses native fetch, not axios
+async function waitForTx(
+  txHash: string,
+  timeoutMs = 60_000,
+  send: (data: object) => void
+): Promise<Record<string, unknown>> {
+  const deadline = Date.now() + timeoutMs;
+  const url = `${REST_URL}/cosmos/tx/v1beta1/txs/${txHash}`;
+  let attempt = 0;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, attempt === 0 ? 2000 : 1500));
+    attempt++;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.status === 404) {
+        // Not yet indexed — keep polling
+        if (attempt % 5 === 0) {
+          send({ type: "log", logType: "muted", message: `Waiting for tx ${txHash.slice(0, 12)}… (${attempt})` });
+        }
+        continue;
       }
+      if (!res.ok) throw new Error(`Tx query returned ${res.status}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await res.json() as any;
+      return data?.tx_response ?? {};
+    } catch {
+      // network hiccup — retry
     }
-  } catch {
-    // ignore
+  }
+  throw new Error(`Tx ${txHash} not confirmed within ${timeoutMs / 1000}s`);
+}
+
+function extractAttr(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  txResponse: any,
+  eventType: string,
+  attrKey: string
+): string | null {
+  for (const event of txResponse?.events ?? []) {
+    if (event.type === eventType) {
+      const attr = (event.attributes ?? []).find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (a: any) => a.key === attrKey
+      );
+      if (attr) return attr.value;
+    }
   }
   return null;
 }
@@ -76,16 +96,18 @@ async function deployReal(
   const mnemonic = process.env.DEPLOYER_MNEMONIC;
   if (!mnemonic) throw new Error("DEPLOYER_MNEMONIC env var not set");
 
-  const gasDenom = process.env.WASM_GAS_DENOM ?? "l2/8b3e1fc559b327a35335e3f26ff657eaee5ff8486ccd3c1bc59007a93cf23156";
+  send({ type: "log", logType: "muted", message: `REST: ${REST_URL}` });
+
   const key = new MnemonicKey({ mnemonic });
   const restClient = new RESTClient(REST_URL, {
     chainId: CHAIN_ID,
-    gasPrices: `0.015${gasDenom}`,
+    gasPrices: `0.015${GAS_DENOM}`,
   });
   const wallet = new Wallet(restClient, key);
   const senderAddress = key.accAddress;
+  send({ type: "log", logType: "info", message: `Deploying from: ${senderAddress}` });
 
-  // ── Step 1: fetch + gzip-compress WASM ─────────────────────────────────
+  // ── Step 1: fetch WASM ────────────────────────────────────────────────
   send({ type: "log", logType: "info", message: "Fetching optimized WASM binary..." });
   const wasmBuf = await fetchWasm();
   const wasmGzip = gzipSync(wasmBuf, { level: 9 });
@@ -97,25 +119,41 @@ async function deployReal(
   send({ type: "log", logType: "info", message: `Broadcasting MsgStoreCode on ${CHAIN_ID}...` });
   send({ type: "status", status: "storing" });
 
-  const storeFee = new Fee(20_000_000, new Coins([new Coin(gasDenom, "300000")]));
+  const storeFee = new Fee(20_000_000, new Coins([new Coin(GAS_DENOM, "300000")]));
   const storeMsg = new MsgStoreCode(senderAddress, wasmBase64);
-  const storeTx = await wallet.createAndSignTx({
-    msgs: [storeMsg],
-    memo: `InitCode IDE — ${contractName}`,
-    fee: storeFee,
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const storeResult: any = await restClient.tx.broadcast(storeTx);
 
-  if (storeResult.code && storeResult.code !== 0) {
-    throw new Error(`MsgStoreCode failed (code ${storeResult.code}): ${storeResult.raw_log}`);
+  let storeTxHash: string;
+  try {
+    const storeTx = await wallet.createAndSignTx({
+      msgs: [storeMsg],
+      memo: `InitCode — ${contractName}`,
+      fee: storeFee,
+    });
+    // Use broadcastSync (no polling) so we avoid initia.js's internal txInfo 404 loop
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const syncResult = await restClient.tx.broadcastSync(storeTx) as any;
+    if (syncResult.code && syncResult.code !== 0) {
+      throw new Error(`MsgStoreCode CheckTx failed (${syncResult.code}): ${syncResult.raw_log}`);
+    }
+    storeTxHash = syncResult.txhash;
+    send({ type: "log", logType: "muted", message: `Store tx submitted: ${storeTxHash}` });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`MsgStoreCode failed: ${msg}`);
   }
 
-  const storeTxHash = storeResult.txhash;
-  const codeIdStr = await queryTxAttr(storeTxHash, "store_code", "code_id");
-  if (!codeIdStr) {
-    throw new Error(`Could not extract code_id from tx ${storeTxHash}`);
+  // ── Poll for store tx inclusion ──────────────────────────────────────
+  send({ type: "log", logType: "info", message: "Waiting for tx to be included in block..." });
+  const storeTxResponse = await waitForTx(storeTxHash, 60_000, send);
+
+  if (storeTxResponse.code && storeTxResponse.code !== 0) {
+    throw new Error(
+      `MsgStoreCode DeliverTx failed (${storeTxResponse.code}): ${storeTxResponse.raw_log}`
+    );
   }
+
+  const codeIdStr = extractAttr(storeTxResponse, "store_code", "code_id");
+  if (!codeIdStr) throw new Error(`Could not extract code_id from tx ${storeTxHash}`);
   const codeId = parseInt(codeIdStr, 10);
 
   send({ type: "log", logType: "success", message: `✓ Contract stored on-chain` });
@@ -126,7 +164,7 @@ async function deployReal(
   send({ type: "log", logType: "info", message: "Instantiating contract..." });
   send({ type: "status", status: "instantiating" });
 
-  const initMsg = getInitMsg(contractName, walletAddress || senderAddress);
+  const initMsg = { verifier: walletAddress || senderAddress, beneficiary: walletAddress || senderAddress };
   const initMsgBase64 = Buffer.from(JSON.stringify(initMsg)).toString("base64");
 
   const instantiateMsg = new MsgInstantiateContract(
@@ -137,28 +175,41 @@ async function deployReal(
     initMsgBase64,
     new Coins([])
   );
-  const instantiateFee = new Fee(500_000, new Coins([new Coin(gasDenom, "10000")]));
-  const instantiateTx = await wallet.createAndSignTx({
-    msgs: [instantiateMsg],
-    memo: `InitCode IDE — ${contractName} instantiate`,
-    fee: instantiateFee,
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const instantiateResult: any = await restClient.tx.broadcast(instantiateTx);
+  const instantiateFee = new Fee(500_000, new Coins([new Coin(GAS_DENOM, "10000")]));
 
-  if (instantiateResult.code && instantiateResult.code !== 0) {
+  let instantiateTxHash: string;
+  try {
+    const instantiateTx = await wallet.createAndSignTx({
+      msgs: [instantiateMsg],
+      memo: `InitCode — ${contractName} instantiate`,
+      fee: instantiateFee,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const syncResult = await restClient.tx.broadcastSync(instantiateTx) as any;
+    if (syncResult.code && syncResult.code !== 0) {
+      throw new Error(`MsgInstantiateContract CheckTx failed (${syncResult.code}): ${syncResult.raw_log}`);
+    }
+    instantiateTxHash = syncResult.txhash;
+    send({ type: "log", logType: "muted", message: `Instantiate tx submitted: ${instantiateTxHash}` });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`MsgInstantiateContract failed: ${msg}`);
+  }
+
+  // ── Poll for instantiate tx inclusion ────────────────────────────────
+  const instantiateTxResponse = await waitForTx(instantiateTxHash, 60_000, send);
+
+  if (instantiateTxResponse.code && instantiateTxResponse.code !== 0) {
     throw new Error(
-      `MsgInstantiateContract failed (code ${instantiateResult.code}): ${instantiateResult.raw_log}`
+      `MsgInstantiateContract DeliverTx failed (${instantiateTxResponse.code}): ${instantiateTxResponse.raw_log}`
     );
   }
 
-  const instantiateTxHash = instantiateResult.txhash;
-  const contractAddress = await queryTxAttr(instantiateTxHash, "instantiate", "_contract_address");
-  if (!contractAddress) {
+  const contractAddress = extractAttr(instantiateTxResponse, "instantiate", "_contract_address");
+  if (!contractAddress)
     throw new Error(`Could not extract contract address from tx ${instantiateTxHash}`);
-  }
 
-  send({ type: "log", logType: "success", message: `✓ Contract instantiated successfully` });
+  send({ type: "log", logType: "success", message: `✓ Contract instantiated` });
   send({ type: "log", logType: "info", message: `  Contract : ${contractAddress}` });
   send({ type: "log", logType: "info", message: `  Init Tx  : ${instantiateTxHash}` });
 
@@ -170,41 +221,38 @@ async function deployReal(
   });
 }
 
-// ── Mock fallback (when no mnemonic configured) ────────────────────────────
+// ── Mock fallback ─────────────────────────────────────────────────────────
 
 function generateTxHash() {
   return Array.from({ length: 64 }, () =>
     Math.floor(Math.random() * 16).toString(16)
   ).join("").toUpperCase();
 }
-
 function generateContractAddress() {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const suffix = Array.from({ length: 38 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `init1${suffix}`;
+  return `init1${Array.from({ length: 38 }, () => chars[Math.floor(Math.random() * chars.length)]).join("")}`;
 }
-
 function generateCodeId() {
   return String(Math.floor(Math.random() * 5000) + 1000);
 }
 
 const MOCK_STEPS = [
-  { delay: 300, logType: "warning", message: "⚠ Running in mock mode — real deployment requires DEPLOYER_MNEMONIC + WASM_REST_URL" },
-  { delay: 500, logType: "info", message: "Set WASM_REST_URL to your WasmVM minitia rollup (e.g. http://localhost:1317)" },
-  { delay: 800, logType: "info", message: "cargo build --release --target wasm32-unknown-unknown" },
-  { delay: 1200, logType: "muted", message: "   Compiling proc-macro2 v1.0.92" },
-  { delay: 1400, logType: "muted", message: "   Compiling serde v1.0.218" },
-  { delay: 1800, logType: "muted", message: "   Compiling cosmwasm-std v2.2.0" },
-  { delay: 2200, logType: "muted", message: "   Compiling cw-storage-plus v2.0.0" },
-  { delay: 2600, logType: "muted", message: "   Compiling my-initia-contract v0.1.0" },
-  { delay: 3200, logType: "success", message: "   Finished release [optimized] target(s) in 3.2s" },
-  { delay: 3500, logType: "info", message: "Optimizing WASM binary..." },
-  { delay: 4200, logType: "success", message: "WASM binary size: 184.3 KB (optimized)" },
+  { delay: 300, logType: "warning", message: "⚠ Running in mock mode — real deployment requires DEPLOYER_MNEMONIC + WASM_REST_URL + WASM_CHAIN_ID" },
+  { delay: 500, logType: "info",    message: "Set WASM_REST_URL to your WasmVM rollup REST endpoint" },
+  { delay: 800, logType: "info",    message: "cargo build --release --target wasm32-unknown-unknown" },
+  { delay: 1200, logType: "muted",  message: "   Compiling proc-macro2 v1.0.92" },
+  { delay: 1400, logType: "muted",  message: "   Compiling serde v1.0.218" },
+  { delay: 1800, logType: "muted",  message: "   Compiling cosmwasm-std v2.2.0" },
+  { delay: 2200, logType: "muted",  message: "   Compiling cw-storage-plus v2.0.0" },
+  { delay: 2600, logType: "muted",  message: "   Compiling my-initia-contract v0.1.0" },
+  { delay: 3200, logType: "success",message: "   Finished release [optimized] target(s) in 3.2s" },
+  { delay: 3500, logType: "info",   message: "Optimizing WASM binary..." },
+  { delay: 4200, logType: "success",message: "WASM binary size: 184.3 KB (optimized)" },
   { delay: 4500, status: "storing" },
-  { delay: 5200, logType: "success", message: "Transaction confirmed in block #2847291" },
+  { delay: 5200, logType: "success",message: "Transaction confirmed in block" },
   { delay: 5500, status: "instantiating" },
-  { delay: 6200, logType: "info", message: "Instantiating contract..." },
-  { delay: 7000, logType: "info", message: "Waiting for instantiation confirmation..." },
+  { delay: 6200, logType: "info",   message: "Instantiating contract..." },
+  { delay: 7000, logType: "info",   message: "Waiting for instantiation confirmation..." },
 ];
 
 async function deployMock(
@@ -212,8 +260,6 @@ async function deployMock(
   contractCode: string,
   send: (data: object) => void
 ): Promise<void> {
-  const hasError = contractCode?.includes("SYNTAX_ERROR");
-
   for (const step of MOCK_STEPS) {
     await new Promise((r) => setTimeout(r, step.delay > 0 ? 200 : 0));
     if ("status" in step && step.status) {
@@ -222,24 +268,14 @@ async function deployMock(
       send({ type: "log", logType: step.logType, message: step.message });
     }
   }
-
-  if (hasError) {
-    send({
-      type: "error",
-      message: "error[E0308]: mismatched types — expected `StdResult<Response>`, found `()`",
-    });
+  if (contractCode?.includes("SYNTAX_ERROR")) {
+    send({ type: "error", message: "error[E0308]: mismatched types — expected `StdResult<Response>`, found `()`" });
     return;
   }
-
-  send({
-    type: "success",
-    contractAddress: generateContractAddress(),
-    txHash: generateTxHash(),
-    codeId: generateCodeId(),
-  });
+  send({ type: "success", contractAddress: generateContractAddress(), txHash: generateTxHash(), codeId: generateCodeId() });
 }
 
-// ── Handler ────────────────────────────────────────────────────────────────
+// ── Handler ───────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const { contractCode, contractName, walletAddress } = await req.json();
@@ -250,13 +286,11 @@ export async function POST(req: NextRequest) {
       const send = (data: object) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
-
       try {
         const realMode = !!(process.env.DEPLOYER_MNEMONIC && REST_URL && CHAIN_ID);
-        const networkLabel = CHAIN_ID || "mock";
-        send({ type: "log", logType: "info", message: `Starting deployment for ${contractName}...` });
-        send({ type: "log", logType: "info", message: `Deploying as ${walletAddress}` });
-        send({ type: "log", logType: "muted", message: `Network: ${networkLabel}` });
+        send({ type: "log", logType: "info",  message: `Starting deployment for ${contractName}...` });
+        send({ type: "log", logType: "info",  message: `Deploying as ${walletAddress}` });
+        send({ type: "log", logType: "muted", message: `Network: ${CHAIN_ID || "mock"}` });
 
         if (realMode) {
           await deployReal(contractName, walletAddress, send);
