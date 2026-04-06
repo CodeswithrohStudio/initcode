@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# InitCode
 
-## Getting Started
+![InitCode](public/initcode-logo.png)
 
-First, run the development server:
+**Browser-based IDE for CosmWasm smart contract development on the Initia blockchain.**
+
+🔗 **Live:** [https://initcode-eta.vercel.app](https://initcode-eta.vercel.app)
+
+---
+
+## What it does
+
+InitCode lets you write, edit, and deploy CosmWasm smart contracts directly from the browser — no local toolchain required. It ships with:
+
+- **Monaco editor** (VS Code engine) with syntax highlighting, bracket matching, and multi-tab support
+- **AI inline completions** — ghost-text suggestions as you type, accepted with Tab
+- **AI chat assistant** — custom-trained model that understands CosmWasm and Initia patterns
+- **One-click deploy** — compiles and deploys your contract to Initia Testnet via a server-side deployer wallet
+- **File explorer** — create, rename, and delete files; full project tree
+
+---
+
+## Setup
+
+### 1. Clone & install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/CodeswithrohStudio/initcode.git
+cd initcode
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# AI (Gemma 4 via Google AI Studio)
+GEMINI_API_KEY=your_key_here
 
-## Learn More
+# Deployer wallet (Initia testnet)
+DEPLOYER_MNEMONIC="your twelve word mnemonic phrase here"
 
-To learn more about Next.js, take a look at the following resources:
+# Chain config
+WASM_REST_URL=https://rest.testnet.initia.xyz
+WASM_CHAIN_ID=initiation-2
+WASM_GAS_DENOM=uinit
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Run
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev --turbo=false
+```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Editor | Monaco Editor (`@monaco-editor/react`) |
+| AI | Gemma 4 via Google Generative AI SDK |
+| State | Zustand |
+| Styling | Tailwind CSS |
+| Deploy target | Initia Testnet (CosmWasm) |
