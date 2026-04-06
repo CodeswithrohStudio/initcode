@@ -1,10 +1,13 @@
 {
-  "name": "InitCode",
-  "description": "Browser-based IDE for building and deploying CosmWasm smart contracts on the Initia blockchain. Features Monaco editor, AI inline completions, AI chat assistant, one-click deploy to wasm-1, and 6 built-in contract templates.",
-  "chain_id": "wasm-1",
-  "tx_hash": "C355222AFBF63D852A22BC36AF1D92930673E3B8C05A025E3B71E01B179C182C",
-  "website": "https://initcode-eta.vercel.app",
-  "github": "https://github.com/CodeswithrohStudio/initcode",
-  "category": "Developer Tooling",
-  "team": "CodeswithrohStudio"
+  "project_name": "InitCode",
+  "repo_url": "https://github.com/CodeswithrohStudio/initcode",
+  "commit_sha": "66e7418669c154180a6c7a14747f006ebc23bf66",
+  "rollup_chain_id": "wasm-1",
+  "deployed_address": "init1v7a9rt0mzta8ykmw632h4tz6qxa0mc78thsczdv45keuvwua4yzqxmluhq",
+  "deploy_tx_hash": "1AEF260F0585A7896AFC460E0375F74AD485EA39166148B523622753CBC5B13A",
+  "vm": "miniwasm",
+  "native_feature": "interwoven-stack",
+  "core_logic_path": "src/app/api/deploy/route.ts",
+  "native_feature_frontend_path": "src/components/ide/TopBar.tsx",
+  "demo_video_url": ""
 }
