@@ -17,38 +17,39 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Info,
+  TriangleAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRef, useEffect } from "react";
 
+function LogIcon({ type }: { type: LogEntry["type"] }) {
+  const base = "shrink-0 mt-[1px]";
+  switch (type) {
+    case "success": return <CheckCircle2 className={cn(base, "w-3 h-3 text-emerald-400")} />;
+    case "error":   return <XCircle      className={cn(base, "w-3 h-3 text-red-400")} />;
+    case "warning": return <TriangleAlert className={cn(base, "w-3 h-3 text-yellow-400")} />;
+    case "info":    return <Info          className={cn(base, "w-3 h-3 text-sky-400")} />;
+    default:        return <span className="w-3 h-3 shrink-0" />;
+  }
+}
+
 function LogLine({ log }: { log: LogEntry }) {
   const colorMap: Record<LogEntry["type"], string> = {
-    success: "log-success",
-    error: "log-error",
-    warning: "log-warning",
-    info: "log-info",
-    muted: "log-muted",
-  };
-
-  const prefixMap: Record<LogEntry["type"], string> = {
-    success: "✓",
-    error: "✗",
-    warning: "⚠",
-    info: "→",
-    muted: " ",
+    success: "text-emerald-400/90",
+    error:   "text-red-400/90",
+    warning: "text-yellow-400/90",
+    info:    "text-sky-400/90",
+    muted:   "text-white/25",
   };
 
   return (
-    <div className="flex gap-2 px-3 py-0.5 font-mono text-[11px] hover:bg-[#1a1a1a]">
-      <span className="text-[#4b5563] shrink-0">
-        {new Date(log.timestamp).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })}
+    <div className="flex items-start gap-2 px-3 py-[3px] font-mono text-[11px] hover:bg-[#1a1a1a] group">
+      <span className="text-[#3a3a3a] shrink-0 pt-[1px] group-hover:text-[#4b5563] transition-colors">
+        {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
       </span>
-      <span className={cn("shrink-0", colorMap[log.type])}>{prefixMap[log.type]}</span>
-      <span className={colorMap[log.type]}>{log.message}</span>
+      <LogIcon type={log.type} />
+      <span className={cn(colorMap[log.type], "leading-relaxed")}>{log.message}</span>
     </div>
   );
 }
@@ -166,12 +167,7 @@ export function BottomPanel() {
   ];
 
   return (
-    <div
-      className={cn(
-        "flex flex-col border-t border-[#2a2a2a] bg-[#0f0f0f] shrink-0 transition-all",
-        bottomPanelOpen ? "h-[200px]" : "h-[30px]"
-      )}
-    >
+    <div className="flex flex-col border-t border-[#2a2a2a] bg-[#0f0f0f] shrink-0 h-[220px]">
       {/* Tab bar */}
       <div className="flex items-center border-b border-[#2a2a2a] bg-[#141414] shrink-0 h-[30px]">
         <div className="flex items-center flex-1 overflow-x-auto">

@@ -128,28 +128,24 @@ export function IDELayout() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left panel — File Tree */}
-        <div
-          className={cn(
-            "shrink-0 transition-all duration-200 overflow-hidden border-r border-[#2a2a2a]",
-            leftPanelOpen ? "w-60" : "w-0"
-          )}
-        >
+        <div className={cn(
+          "shrink-0 transition-all duration-200 overflow-hidden border-r border-[#2a2a2a]",
+          leftPanelOpen ? "w-60" : "w-0"
+        )}>
           {leftPanelOpen && <FileTree />}
         </div>
 
-        {/* Center — Editor */}
+        {/* Center — Editor + Bottom */}
         <div className="flex flex-col flex-1 min-w-0 min-h-0">
           <EditorPanel />
           <BottomPanel />
         </div>
 
         {/* Right panel — AI Assistant */}
-        <div
-          className={cn(
-            "shrink-0 transition-all duration-200 overflow-hidden",
-            rightPanelOpen ? "w-80" : "w-0"
-          )}
-        >
+        <div className={cn(
+          "shrink-0 transition-all duration-200 overflow-hidden border-l border-[#2a2a2a]",
+          rightPanelOpen ? "w-80" : "w-0"
+        )}>
           {rightPanelOpen && <AIAssistant />}
         </div>
       </div>
