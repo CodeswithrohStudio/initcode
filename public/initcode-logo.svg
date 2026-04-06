@@ -1,0 +1,17 @@
+<svg viewBox="0 0 66 44" fill="none" xmlns="http://www.w3.org/2000/svg" width="660" height="440">
+  <defs>
+    <pattern id="p" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="7" stroke="white" stroke-width="1.3"/>
+    </pattern>
+    <clipPath id="c">
+      <rect x="1" y="1" width="11" height="42"/>
+      <rect x="17" y="1" width="47" height="12"/>
+      <rect x="17" y="1" width="12" height="42"/>
+      <rect x="17" y="31" width="47" height="12"/>
+    </clipPath>
+  </defs>
+  <rect width="66" height="44" fill="black"/>
+  <rect x="0" y="0" width="66" height="44" fill="url(#p)" clip-path="url(#c)"/>
+  <rect x="1" y="1" width="11" height="42" stroke="white" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+  <path d="M17 1h47v12H29V31h35v12H17z" stroke="white" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+</svg>

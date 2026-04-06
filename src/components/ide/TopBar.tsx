@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIDEStore } from "@/store/ideStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,14 +13,15 @@ import {
   PanelRightOpen,
   ChevronDown,
   Loader2,
-  Zap,
-  Code2,
-  Droplets,
   Check,
   Copy,
   Wallet,
+  RefreshCw,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getInitUsername } from "@/lib/devWallets";
+import { ICLogo } from "@/components/ICLogo";
 
 interface TopBarProps {
   onDeploy: () => void;
@@ -35,32 +36,59 @@ export function TopBar({ onDeploy }: TopBarProps) {
     leftPanelOpen,
     rightPanelOpen,
     walletBalance,
-    selectedAccountIndex,
-    devAccounts,
     setLeftPanelOpen,
     setRightPanelOpen,
     setProjectName,
-    selectAccount,
-    requestFaucet,
+    setWallet,
+    disconnectWallet,
+    setWalletBalance,
+    setWalletConnecting,
   } = useIDEStore();
 
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(projectName);
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const [faucetLoading, setFaucetLoading] = useState(false);
+  const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  // "connect own wallet" flow
+  const [showConnectInput, setShowConnectInput] = useState(false);
+  const [customAddress, setCustomAddress] = useState("");
+  // Whether we're showing the deployer wallet or a custom one
+  const [deployerAddress, setDeployerAddress] = useState<string | null>(null);
+  const [deployerBalance, setDeployerBalance] = useState<number>(0);
 
-  const handleNameSave = () => {
-    setProjectName(tempName.trim() || "my-initia-project");
-    setEditingName(false);
-  };
+  // Fetch deployer wallet from server on mount
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/wallet-info");
+        if (!res.ok) return;
+        const { address, balanceINIT } = await res.json();
+        setDeployerAddress(address);
+        setDeployerBalance(balanceINIT);
+        // Auto-connect deployer wallet if no custom wallet connected
+        setWallet(address, getInitUsername(address));
+        setWalletBalance(balanceINIT);
+      } catch {
+        // Ignore — leave wallet as null
+        setWalletConnecting(false);
+      }
+    }
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleFaucet = async () => {
-    setFaucetLoading(true);
-    // Simulate network call
-    await new Promise((r) => setTimeout(r, 1200));
-    requestFaucet();
-    setFaucetLoading(false);
+  const handleRefreshBalance = async () => {
+    setBalanceLoading(true);
+    try {
+      const res = await fetch("/api/wallet-info");
+      if (res.ok) {
+        const { balanceINIT } = await res.json();
+        setDeployerBalance(balanceINIT);
+        if (walletAddress === deployerAddress) setWalletBalance(balanceINIT);
+      }
+    } catch { /* ignore */ }
+    setBalanceLoading(false);
   };
 
   const handleCopyAddress = () => {
@@ -71,17 +99,40 @@ export function TopBar({ onDeploy }: TopBarProps) {
     }
   };
 
+  const handleConnectCustom = () => {
+    const addr = customAddress.trim();
+    if (!addr.startsWith("init1") || addr.length < 20) return;
+    setWallet(addr, getInitUsername(addr));
+    setWalletBalance(0); // can't know external balance
+    setShowConnectInput(false);
+    setCustomAddress("");
+    setShowWalletMenu(false);
+  };
+
+  const handleSwitchToDeployer = () => {
+    if (deployerAddress) {
+      setWallet(deployerAddress, getInitUsername(deployerAddress));
+      setWalletBalance(deployerBalance);
+    }
+    setShowWalletMenu(false);
+  };
+
+  const handleNameSave = () => {
+    setProjectName(tempName.trim() || "my-initia-project");
+    setEditingName(false);
+  };
+
   const shortAddress = walletAddress
     ? `${walletAddress.slice(0, 10)}...${walletAddress.slice(-6)}`
-    : "";
+    : "Loading...";
+
+  const isDeployerWallet = walletAddress === deployerAddress;
 
   return (
     <header className="flex items-center h-12 px-3 border-b border-[#2a2a2a] bg-[#0f0f0f] shrink-0 gap-2 z-50">
       {/* Logo */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center justify-center w-7 h-7 rounded-md bg-white">
-          <Code2 className="w-4 h-4 text-black" />
-        </div>
+        <ICLogo className="w-10 h-7 text-white" />
         <span className="font-semibold text-sm text-white">InitCode</span>
       </div>
 
@@ -137,127 +188,132 @@ export function TopBar({ onDeploy }: TopBarProps) {
       {/* Right side — wallet + deploy */}
       <div className="flex items-center gap-2 shrink-0">
 
-        {/* .init username badge */}
-        {initUsername && (
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#1e1e1e] border border-[#2a2a2a]">
-            <Zap className="w-3 h-3 text-[#a8a8a8]" />
-            <span className="text-xs text-[#c8c8c8] font-mono">{initUsername}</span>
-          </div>
-        )}
-
-        {/* Account selector — Remix-style */}
+        {/* Wallet button */}
         <div className="relative">
           <button
             className="flex items-center gap-2 h-7 px-2.5 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] hover:bg-[#242424] hover:border-[#3a3a3a] transition-all"
-            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            onClick={() => setShowWalletMenu(!showWalletMenu)}
           >
-            {/* Green dot — always connected */}
             <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              <div className={cn(
+                "w-1.5 h-1.5 rounded-full shrink-0",
+                walletAddress ? "bg-emerald-400" : "bg-[#6b7280] animate-pulse"
+              )} />
               <span className="text-[11px] font-mono text-[#c8c8c8]">{shortAddress}</span>
             </div>
-
-            {/* Balance */}
-            <div className="flex items-center gap-1 pl-2 border-l border-[#2a2a2a]">
-              <span className="text-[11px] font-semibold text-emerald-400">
-                {walletBalance.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-              </span>
-              <span className="text-[10px] text-[#6b7280]">INIT</span>
-            </div>
-
+            {walletAddress && (
+              <div className="flex items-center gap-1 pl-2 border-l border-[#2a2a2a]">
+                <span className="text-[11px] font-semibold text-emerald-400">
+                  {walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </span>
+                <span className="text-[10px] text-[#6b7280]">INIT</span>
+              </div>
+            )}
             <ChevronDown className="w-3 h-3 text-[#6b7280] shrink-0" />
           </button>
 
-          {showAccountMenu && (
+          {showWalletMenu && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowAccountMenu(false)} />
+              <div className="fixed inset-0 z-40" onClick={() => { setShowWalletMenu(false); setShowConnectInput(false); }} />
               <div className="absolute right-0 top-9 z-50 w-80 rounded-lg border border-[#2a2a2a] bg-[#141414] shadow-2xl overflow-hidden">
+
                 {/* Header */}
                 <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a2a] bg-[#1a1a1a]">
                   <div className="flex items-center gap-2">
                     <Wallet className="w-3.5 h-3.5 text-[#a8a8a8]" />
-                    <span className="text-xs font-semibold text-white">Dev Accounts</span>
+                    <span className="text-xs font-semibold text-white">
+                      {isDeployerWallet ? "Deployer Wallet" : "Connected Wallet"}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-[#6b7280]">Initia Testnet · Pre-funded</span>
+                  <span className="text-[10px] text-[#6b7280]">Initia Testnet</span>
                 </div>
 
-                {/* Current account detail */}
-                <div className="p-3 border-b border-[#2a2a2a] bg-[#0f0f0f]">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-[#6b7280] uppercase tracking-wider">Active Account</span>
-                    <button
-                      onClick={handleCopyAddress}
-                      className="flex items-center gap-1 text-[10px] text-[#6b7280] hover:text-white transition-colors"
-                    >
-                      {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      {copied ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
-                  <p className="text-[11px] font-mono text-[#c8c8c8] break-all">{walletAddress}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-bold text-emerald-400">
-                        {walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                {/* Active wallet */}
+                {walletAddress && (
+                  <div className="p-3 border-b border-[#2a2a2a]">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] text-[#6b7280] uppercase tracking-wider">
+                        {isDeployerWallet ? "Server Deployer" : "Your Wallet"}
                       </span>
-                      <span className="text-xs text-[#6b7280]">INIT</span>
+                      <button
+                        onClick={handleCopyAddress}
+                        className="flex items-center gap-1 text-[10px] text-[#6b7280] hover:text-white transition-colors"
+                      >
+                        {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copied ? "Copied!" : "Copy"}
+                      </button>
                     </div>
-                    <button
-                      onClick={handleFaucet}
-                      disabled={faucetLoading}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#2a2a2a] border border-[#3a3a3a] text-[#c8c8c8] text-[11px] hover:bg-[#3a3a3a] transition-colors disabled:opacity-50"
-                    >
-                      {faucetLoading ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Droplets className="w-3 h-3" />
-                      )}
-                      {faucetLoading ? "Requesting..." : "+100 INIT"}
-                    </button>
-                  </div>
-                </div>
+                    <p className="text-[11px] font-mono text-[#c8c8c8] break-all">{walletAddress}</p>
 
-                {/* Account list */}
-                <div className="max-h-48 overflow-y-auto">
-                  {devAccounts.map((account) => (
-                    <button
-                      key={account.index}
-                      className={cn(
-                        "w-full flex items-center justify-between px-3 py-2 transition-colors text-left",
-                        "hover:bg-[#1e1e1e] border-b border-[#1e1e1e]",
-                        selectedAccountIndex === account.index && "bg-[#1a1a1a]"
-                      )}
-                      onClick={() => {
-                        selectAccount(account.index);
-                        setShowAccountMenu(false);
-                      }}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className={cn(
-                          "w-1.5 h-1.5 rounded-full shrink-0",
-                          selectedAccountIndex === account.index ? "bg-emerald-400" : "bg-[#3a3a3a]"
-                        )} />
-                        <div className="min-w-0">
-                          <p className="text-[11px] text-[#a8a8a8]">{account.label}</p>
-                          <p className="text-[10px] font-mono text-[#6b7280] truncate">
-                            {account.address.slice(0, 14)}...{account.address.slice(-6)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-baseline gap-1 shrink-0 ml-2">
-                        <span className="text-[11px] font-semibold text-emerald-400">
-                          {account.balance.toLocaleString()}
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-bold text-emerald-400">
+                          {walletBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                         </span>
-                        <span className="text-[9px] text-[#6b7280]">INIT</span>
+                        <span className="text-xs text-[#6b7280]">INIT</span>
                       </div>
-                    </button>
-                  ))}
-                </div>
+                      {isDeployerWallet && (
+                        <button
+                          onClick={handleRefreshBalance}
+                          disabled={balanceLoading}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#2a2a2a] border border-[#3a3a3a] text-[#c8c8c8] text-[11px] hover:bg-[#3a3a3a] transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className={cn("w-3 h-3", balanceLoading && "animate-spin")} />
+                          Refresh
+                        </button>
+                      )}
+                    </div>
 
-                {/* Footer hint */}
-                <div className="px-3 py-2 bg-[#1a1a1a] border-t border-[#2a2a2a]">
-                  <p className="text-[10px] text-[#4b5563]">
-                    These are dev accounts pre-loaded with testnet INIT. Use the faucet for more.
-                  </p>
+                    {/* Switch back to deployer if on custom wallet */}
+                    {!isDeployerWallet && deployerAddress && (
+                      <button
+                        onClick={handleSwitchToDeployer}
+                        className="mt-2 w-full text-[11px] text-[#6b7280] hover:text-white text-left transition-colors"
+                      >
+                        ← Switch back to deployer wallet
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Connect own wallet */}
+                <div className="p-3">
+                  {!showConnectInput ? (
+                    <button
+                      onClick={() => setShowConnectInput(true)}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-dashed border-[#3a3a3a] text-[#6b7280] text-[11px] hover:border-[#5a5a5a] hover:text-[#a8a8a8] transition-colors"
+                    >
+                      <Wallet className="w-3 h-3" />
+                      Connect your own wallet
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#6b7280] uppercase tracking-wider">Wallet address</span>
+                        <button onClick={() => setShowConnectInput(false)}>
+                          <X className="w-3 h-3 text-[#6b7280] hover:text-white" />
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="init1..."
+                        value={customAddress}
+                        onChange={(e) => setCustomAddress(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleConnectCustom()}
+                        className="h-7 text-[11px] bg-[#1e1e1e] border-[#3a3a3a] text-white font-mono placeholder:text-[#4b5563]"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleConnectCustom}
+                        disabled={!customAddress.startsWith("init1") || customAddress.length < 20}
+                        className="w-full px-3 py-1.5 rounded-md bg-white text-black text-[11px] font-semibold hover:bg-white/90 transition-colors disabled:opacity-40"
+                      >
+                        Connect
+                      </button>
+                      <p className="text-[10px] text-[#4b5563]">
+                        Transactions are signed by the server deployer key regardless of the display address.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </>

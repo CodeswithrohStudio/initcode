@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type * as Monaco from "monaco-editor";
+import { ICLogo } from "@/components/ICLogo";
 import { useIDEStore, useActiveFile } from "@/store/ideStore";
 import { Button } from "@/components/ui/button";
 import { X, Circle } from "lucide-react";
@@ -26,11 +27,8 @@ function EditorSkeleton() {
 function WelcomeScreen() {
   return (
     <div className="flex-1 bg-[#0f0f0f] flex flex-col items-center justify-center gap-4">
-      <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M16 4L28 10V22L16 28L4 22V10L16 4Z" stroke="#ffffff" strokeWidth="1.5" fill="none" />
-          <path d="M16 4V28M4 10L28 22M28 10L4 22" stroke="#ffffff" strokeWidth="0.75" opacity="0.4" />
-        </svg>
+      <div className="w-20 h-14 flex items-center justify-center">
+        <ICLogo className="w-full h-full text-white/60" />
       </div>
       <div className="text-center">
         <h2 className="text-lg font-semibold text-white">InitCode</h2>
