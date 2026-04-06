@@ -3,6 +3,7 @@
 import { useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
+import type * as Monaco from "monaco-editor";
 import { useIDEStore, useActiveFile } from "@/store/ideStore";
 import { Button } from "@/components/ui/button";
 import { X, Circle } from "lucide-react";
@@ -118,7 +119,7 @@ export function EditorPanel() {
     completionsDisposable.current = monaco.languages.registerInlineCompletionsProvider(
       [{ pattern: "**" }],
       {
-        provideInlineCompletions: async (model, position, _ctx, token) => {
+        provideInlineCompletions: async (model: Monaco.editor.ITextModel, position: Monaco.Position, _ctx: Monaco.languages.InlineCompletionContext, token: Monaco.CancellationToken) => {
           const prefix = model.getValueInRange({
             startLineNumber: 1,
             startColumn: 1,
