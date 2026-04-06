@@ -116,7 +116,7 @@ function DashArrow() {
 
 const FEATURES = [
   { Icon: Code2,      title: "Monaco Editor",    desc: "Full Rust / CosmWasm IDE with syntax highlighting, autocomplete, and live error detection." },
-  { Icon: Bot,        title: "AI Assistant",     desc: "Claude-powered assistant that audits, explains, and generates CosmWasm code on demand." },
+  { Icon: Bot,        title: "AI Assistant",     desc: "Custom-trained model that audits, explains, and generates CosmWasm code on demand." },
   { Icon: Zap,        title: "One-Click Deploy", desc: "Compile and deploy contracts to Initia Testnet with streaming live logs in the terminal." },
   { Icon: Wallet,     title: "Dev Wallet",       desc: "Pre-funded server wallet included. Or connect your own init1 address — zero setup required." },
   { Icon: FolderOpen, title: "6 Templates",      desc: "Counter, CW20 Token, NFT, Escrow, Staking, and DAO Voting contracts ready to deploy." },
