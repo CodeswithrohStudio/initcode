@@ -9,5 +9,5 @@
   "native_feature": "interwoven-stack",
   "core_logic_path": "src/app/api/deploy/route.ts",
   "native_feature_frontend_path": "src/components/ide/TopBar.tsx",
-  "demo_video_url": ""
+  "demo_video_url": "https://www.youtube.com/watch?v=tztXiPO33zw"
 }
